@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 
-const NotFoundScreen = ({ searchId, onReset, whatsappNumber }) => {
+const NotFoundScreen = ({ searchId, onReset, onOpenSupport }) => {
     return (
         <motion.div
             key="not-found"
@@ -27,14 +27,12 @@ const NotFoundScreen = ({ searchId, onReset, whatsappNumber }) => {
                 >
                     Intentar de nuevo
                 </button>
-                <a
-                    href={`https://wa.me/${whatsappNumber}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="px-6 py-3 bg-[#25D366] hover:bg-[#20bd59] text-white font-bold rounded-xl transition-colors w-full sm:w-auto border-none flex items-center justify-center gap-2 no-underline"
+                <button
+                    onClick={onOpenSupport}
+                    className="px-6 py-3 bg-[#003366] hover:bg-[#002244] text-white font-bold rounded-xl transition-colors w-full sm:w-auto border-none flex items-center justify-center gap-2 cursor-pointer shadow-md"
                 >
-                    <span>💬</span> Reportar por WhatsApp
-                </a>
+                    <span>🎧</span> Contactar Soporte
+                </button>
             </div>
         </motion.div>
     );
