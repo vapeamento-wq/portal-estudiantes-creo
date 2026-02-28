@@ -9,12 +9,12 @@ export const registrarLog = (documento, accion) => {
       doc: documento,
       estado: `[ESTUDIANTE] ${accion}`
     };
-    fetch(URL_SCRIPT_LOGS, {
+    const dbUrl = import.meta.env.VITE_FIREBASE_DB_BASE_URL;
+    fetch(`${dbUrl}/logs.json`, {
       method: "POST",
-      mode: "no-cors",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(datosLog)
-    }).catch(err => console.log("Error enviando log:", err));
+    }).catch(err => console.log("Error enviando log a Firebase:", err));
 
     // Si es una consulta exitosa, registrar también en Firebase Analytics
     if (accion.includes("Exitosa")) {

@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { trackAppEvent } from '../App';
 
-const URL_SCRIPT_LOGS = import.meta.env.VITE_SCRIPT_LOGS_URL;
+// Usamos Firebase URL directamente
+const FIREBASE_DB_URL = import.meta.env.VITE_FIREBASE_DB_BASE_URL;
 
 const SupportFormModal = ({ isOpen, onClose }) => {
     const [formData, setFormData] = useState({
@@ -33,12 +34,11 @@ const SupportFormModal = ({ isOpen, onClose }) => {
 
         try {
             trackAppEvent("submit_support_form");
-            const response = await fetch(URL_SCRIPT_LOGS, {
+            const response = await fetch(`${FIREBASE_DB_URL}/errores.json`, {
                 method: 'POST',
-                mode: 'no-cors',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    action: "reporte_soporte",
+                    fecha: new Date().toLocaleString('es-CO'),
                     nombre: formData.nombre,
                     codigo: formData.codigo,
                     mensaje: formData.mensaje
