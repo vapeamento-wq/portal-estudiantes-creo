@@ -94,7 +94,7 @@ const AdminPanel = ({ onBack, onSelectDocente }) => {
                 let headerRowIdx = -1;
                 for (let i = 0; i < Math.min(20, rows.length); i++) {
                     const rowStr = (rows[i] || []).join(' ').toUpperCase();
-                    if (rowStr.includes('ESTUDIANTE') || rowStr.includes('DOCENTE') || rowStr.includes('CÉDULA') || rowStr.includes('CEDULA')) {
+                    if (rowStr.includes('ESTUDIANTE') || rowStr.includes('DOCENTE') || rowStr.includes('CÉDULA') || rowStr.includes('CEDULA') || rowStr.includes('CÓDIGO')) {
                         headerRowIdx = i;
                         break;
                     }
@@ -102,7 +102,7 @@ const AdminPanel = ({ onBack, onSelectDocente }) => {
 
                 if (headerRowIdx === -1) {
                     setUploading(false);
-                    setUploadResult('⚠️ Error: No se pudo detectar la fila de títulos en el Excel. Asegúrese de que existan columnas como "NOMBRE ESTUDIANTE" o "CÉDULA".');
+                    setUploadResult('⚠️ Error: No se pudo detectar la fila de títulos en el Excel. Asegúrese de que existan columnas como "NOMBRE ESTUDIANTE" o "CÓDIGO".');
                     return;
                 }
 
@@ -126,7 +126,7 @@ const AdminPanel = ({ onBack, onSelectDocente }) => {
 
                 // Identificamos las columnas críticas dinámicamente
                 const idxNombre = findCol(['NOMBRE ESTUDIANTE', 'ESTUDIANTE', 'ALUMNO', 'NOMBRE DOCENTE', 'PROFESOR', 'DOCENTE']);
-                const idxCedula = findCol(['CÉDULA', 'CEDULA', 'DOCUMENTO', 'ID']);
+                const idxCedula = findCol(['CÓDIGO', 'CODIGO', 'CÉDULA', 'CEDULA', 'DOCUMENTO', 'ID']);
                 const idxMateria = findCol(['ASIGNATURA', 'MATERIA', 'CURSO']);
                 const idxGrupo = findCol(['GRUPO', 'GRUPO TUTORIAL']);
                 const idxBloque = findCol(['BLOQUE']);
@@ -178,7 +178,7 @@ const AdminPanel = ({ onBack, onSelectDocente }) => {
 
                 if (idxNombre === -1 || idxCedula === -1) {
                     setUploading(false);
-                    setUploadResult('⚠️ Error: No se encontraron las columnas de Nombre o Cédula en el Excel (tituladas "NOMBRE ESTUDIANTE" y "CÉDULA").');
+                    setUploadResult('⚠️ Error: No se encontraron las columnas de Nombre o Código en el Excel.');
                     return;
                 }
 
@@ -599,7 +599,7 @@ const AdminPanel = ({ onBack, onSelectDocente }) => {
                             <form onSubmit={(e) => e.preventDefault()}>
                                 <input
                                     type="text"
-                                    placeholder="Buscar estudiante o cédula..."
+                                    placeholder="Buscar estudiante o código..."
                                     value={filterDocente}
                                     onChange={(e) => setFilterDocente(e.target.value)}
                                     className="p-3 w-full md:w-64 rounded-xl border border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#003366] transition-all font-medium text-sm"
@@ -612,7 +612,7 @@ const AdminPanel = ({ onBack, onSelectDocente }) => {
                                 <thead className="sticky top-0 bg-white dark:bg-slate-800 z-10">
                                     <tr className="border-b-2 border-gray-100 dark:border-slate-700">
                                         <th className="p-3 text-sm text-gray-500 dark:text-gray-400 uppercase font-bold">Nombre del Estudiante</th>
-                                        <th className="p-3 text-sm text-gray-500 dark:text-gray-400 uppercase font-bold">Cédula</th>
+                                        <th className="p-3 text-sm text-gray-500 dark:text-gray-400 uppercase font-bold">Código</th>
                                         <th className="p-3 text-sm text-gray-500 dark:text-gray-400 uppercase font-bold">Cursos Asignados</th>
                                     </tr>
                                 </thead>

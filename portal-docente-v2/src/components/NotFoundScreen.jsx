@@ -18,7 +18,7 @@ const NotFoundScreen = ({ searchId, onReset, whatsappNumber }) => {
                 Estudiante no encontrado
             </h2>
             <p className="text-gray-500 dark:text-gray-400 max-w-md mx-auto mb-8 text-base md:text-lg">
-                No pudimos encontrar una programación académica asociada al número de documento <strong>{searchId}</strong> en nuestra base de datos.
+                No pudimos encontrar una programación académica asociada al código <strong>{searchId}</strong> en nuestra base de datos.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                 <button

@@ -10,6 +10,7 @@ import AdminPanel from './components/AdminPanel';
 import MaintenanceScreen from './components/MaintenanceScreen';
 import NotFoundScreen from './components/NotFoundScreen';
 import WelcomeScreen from './components/WelcomeScreen';
+import SupportFormModal from './components/SupportFormModal';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/react';
@@ -64,6 +65,7 @@ const fetcher = (...args) => fetch(...args).then(res => res.json());
 const App = () => {
   const [view, setView] = useState('user');
   const [passInput, setPassInput] = useState('');
+  const [showSupportModal, setShowSupportModal] = useState(false);
 
   // Estados Usuario
   const [searchTerm, setSearchTerm] = useState('');
@@ -304,7 +306,7 @@ const App = () => {
               <NotFoundScreen
                 searchId={searchId}
                 onReset={handleReset}
-                whatsappNumber={WHATSAPP_NUMBER}
+                onOpenSupport={() => setShowSupportModal(true)}
               />
             ) : (
               <WelcomeScreen
@@ -337,17 +339,25 @@ const App = () => {
 
       {/* Floating Action Buttons */}
       <div className="fixed bottom-8 right-8 flex flex-col gap-4 z-50">
-        <a
-          href={`https://wa.me/${WHATSAPP_NUMBER}`}
-          target="_blank"
-          rel="noreferrer"
-          onClick={() => trackAppEvent("click_whatsapp_support", { location: "floating_button" })}
-          className="bg-[#25D366] text-white w-14 h-14 rounded-full font-bold shadow-[0_10px_30px_rgba(37,211,102,0.4)] hover:scale-110 transition-transform flex items-center justify-center text-2xl no-underline"
-          title="Soporte por WhatsApp"
+        <button
+          onClick={() => {
+            setShowSupportModal(true);
+            trackAppEvent("click_support_button_floating");
+          }}
+          className="bg-[#003366] text-white p-4 rounded-full font-bold shadow-[0_10px_30px_rgba(0,51,102,0.4)] hover:scale-105 transition-transform flex items-center justify-center cursor-pointer border-none group"
+          title="Soporte Técnico"
         >
-          💬
-        </a>
+          <span className="text-2xl mr-0 md:mr-2">🎧</span>
+          <span className="hidden md:block whitespace-nowrap overflow-hidden max-w-0 group-hover:max-w-xs transition-all duration-500 ease-in-out">
+            Soporte Técnico
+          </span>
+        </button>
       </div>
+
+      <SupportFormModal
+        isOpen={showSupportModal}
+        onClose={() => setShowSupportModal(false)}
+      />
       <Analytics />
       <SpeedInsights />
     </div>

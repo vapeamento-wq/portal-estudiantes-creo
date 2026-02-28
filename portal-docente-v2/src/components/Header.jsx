@@ -40,7 +40,7 @@ const Header = ({ onReset, docente, searchTerm, setSearchTerm, onSearch, loading
           {!docente && (
             <form onSubmit={onSearch} className="bg-white dark:bg-slate-800 p-1 rounded-full flex shadow-lg transition-transform w-full md:w-auto">
               <input
-                placeholder="Cédula del Estudiante"
+                placeholder="Código del Estudiante"
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
                 maxLength={15}
