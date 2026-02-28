@@ -20,6 +20,9 @@ const AdminPanel = ({ onBack, onSelectDocente }) => {
     const [anuncioFin, setAnuncioFin] = useState('');
     const [guardandoAnuncio, setGuardandoAnuncio] = useState(false);
     const [mantenimientoActivo, setMantenimientoActivo] = useState(false);
+    const [logs, setLogs] = useState([]);
+    const [errores, setErrores] = useState([]);
+    const [activeTab, setActiveTab] = useState('radar'); // 'radar', 'logs', 'errores'
 
     useEffect(() => {
         // Fetch current teachers on mount
@@ -65,6 +68,23 @@ const AdminPanel = ({ onBack, onSelectDocente }) => {
                         setMantenimientoActivo(Boolean(dataAnuncio.mantenimiento));
                     }
                 }
+
+                // Fetch Logs (últimos 100)
+                const resLogs = await fetch(`${dbBaseUrl}/logs.json`);
+                const dataLogs = await resLogs.json();
+                if (dataLogs) {
+                    const logsArray = Object.keys(dataLogs).map(k => ({ id: k, ...dataLogs[k] }));
+                    setLogs(logsArray.reverse().slice(0, 100));
+                }
+
+                // Fetch Errores/Soporte (últimos 100)
+                const resErrores = await fetch(`${dbBaseUrl}/errores.json`);
+                const dataErrores = await resErrores.json();
+                if (dataErrores) {
+                    const erroresArray = Object.keys(dataErrores).map(k => ({ id: k, ...dataErrores[k] }));
+                    setErrores(erroresArray.reverse().slice(0, 100));
+                }
+
             } catch (err) {
                 console.error("Error fetching admin data:", err);
             } finally {
@@ -158,7 +178,7 @@ const AdminPanel = ({ onBack, onSelectDocente }) => {
                         bestIdx = candidateIndexes[0];
                     } else if (candidateIndexes.length > 1) {
                         let maxScore = -1;
-                        for (const idx of candidateIndexes) {
+                        for (let idx of candidateIndexes) {
                             let score = 0;
                             // Muestrear hasta 50 filas para sumar la longitud del texto
                             const limit = Math.min(rows.length, headerRowIdx + 50);
@@ -514,148 +534,238 @@ const AdminPanel = ({ onBack, onSelectDocente }) => {
                     </form>
                 </div>
 
-                {/* RADAR AND TABLE GRID */}
-                <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-8">
+                {/* TAB NAVIGATION */}
+                <div className="flex bg-gray-100 dark:bg-slate-700/50 p-1 rounded-xl mb-6 max-w-xl mx-auto border border-gray-200 dark:border-slate-600">
+                    <button
+                        onClick={() => setActiveTab('radar')}
+                        className={`flex-1 py-2 text-sm font-bold rounded-lg transition-colors ${activeTab === 'radar' ? 'bg-white dark:bg-slate-800 text-[#003366] dark:text-blue-400 shadow-sm' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
+                    >🔥 Radar y Directorio</button>
+                    <button
+                        onClick={() => setActiveTab('logs')}
+                        className={`flex-1 py-2 text-sm font-bold rounded-lg transition-colors ${activeTab === 'logs' ? 'bg-white dark:bg-slate-800 text-[#003366] dark:text-blue-400 shadow-sm' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
+                    >📝 Logs de Búsqueda</button>
+                    <button
+                        onClick={() => setActiveTab('errores')}
+                        className={`flex-1 py-2 text-sm font-bold rounded-lg transition-colors ${activeTab === 'errores' ? 'bg-white dark:bg-slate-800 text-[#003366] dark:text-blue-400 shadow-sm' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
+                    >🎧 Tickets de Soporte</button>
+                </div>
 
-                    {/* RADAR DE HOY */}
-                    <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-gray-100 dark:border-slate-700 transition-colors flex flex-col h-[600px]">
-                        <div className="flex justify-between items-center mb-4">
-                            <h4 className="m-0 text-orange-500 font-bold text-lg flex items-center gap-2">🔥 Radar (Hoy)</h4>
-                            <span className="bg-orange-100 dark:bg-orange-900/50 text-orange-600 dark:text-orange-400 font-bold px-2.5 py-1 rounded-full text-xs">{radarHoy.length} Activos</span>
-                        </div>
-                        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4 pb-4 border-b border-gray-100 dark:border-slate-700">Clases remotas programadas para el día de hoy ordenadas por hora.</p>
+                {activeTab === 'radar' && (
+                    <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-8 fade-in-up">
 
-                        <div className="flex-1 overflow-y-auto pr-2 space-y-4 custom-scrollbar">
-                            {radarHoy.length === 0 ? (
-                                <div className="text-center text-gray-400 text-sm py-10">No hay clases sincrónicas programadas para hoy.</div>
-                            ) : (
-                                radarHoy.map((act, i) => {
-                                    // Determinar colores basados en el estado (gris=pasado, verde=presente, azul=futuro)
-                                    let borderColor = 'border-blue-100/50 dark:border-blue-900/30';
-                                    let bgColor = 'bg-blue-50/50 dark:bg-blue-900/10 hover:bg-blue-50 dark:hover:bg-blue-900/20';
-                                    let indicatorColor = 'bg-blue-500';
-                                    let statusText = 'Pendiente';
+                        {/* RADAR DE HOY */}
+                        <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-gray-100 dark:border-slate-700 transition-colors flex flex-col h-[600px]">
+                            <div className="flex justify-between items-center mb-4">
+                                <h4 className="m-0 text-orange-500 font-bold text-lg flex items-center gap-2">🔥 Radar (Hoy)</h4>
+                                <span className="bg-orange-100 dark:bg-orange-900/50 text-orange-600 dark:text-orange-400 font-bold px-2.5 py-1 rounded-full text-xs">{radarHoy.length} Activos</span>
+                            </div>
+                            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4 pb-4 border-b border-gray-100 dark:border-slate-700">Clases remotas programadas para el día de hoy ordenadas por hora.</p>
 
-                                    if (act.status === 'past') {
-                                        borderColor = 'border-gray-200 dark:border-slate-600';
-                                        bgColor = 'bg-gray-50 dark:bg-slate-700/30 grayscale hover:grayscale-0';
-                                        indicatorColor = 'bg-gray-400';
-                                        statusText = 'Terminada';
-                                    } else if (act.status === 'present') {
-                                        borderColor = 'border-green-200 dark:border-green-800/50';
-                                        bgColor = 'bg-green-50/50 dark:bg-green-900/10 hover:bg-green-50 dark:hover:bg-green-900/20';
-                                        indicatorColor = 'bg-[#25D366] animate-pulse';
-                                        statusText = 'En Curso';
-                                    }
+                            <div className="flex-1 overflow-y-auto pr-2 space-y-4 custom-scrollbar">
+                                {radarHoy.length === 0 ? (
+                                    <div className="text-center text-gray-400 text-sm py-10">No hay clases sincrónicas programadas para hoy.</div>
+                                ) : (
+                                    radarHoy.map((act, i) => {
+                                        // Determinar colores basados en el estado (gris=pasado, verde=presente, azul=futuro)
+                                        let borderColor = 'border-blue-100/50 dark:border-blue-900/30';
+                                        let bgColor = 'bg-blue-50/50 dark:bg-blue-900/10 hover:bg-blue-50 dark:hover:bg-blue-900/20';
+                                        let indicatorColor = 'bg-blue-500';
+                                        let statusText = 'Pendiente';
 
-                                    return (
-                                        <div
-                                            key={i}
-                                            className={`p-4 border rounded-xl transition-all relative overflow-hidden group ${bgColor} ${borderColor}`}
-                                        >
-                                            {/* Indicador de estado lateral */}
-                                            <div className={`absolute left-0 top-0 bottom-0 w-1 ${indicatorColor}`} />
+                                        if (act.status === 'past') {
+                                            borderColor = 'border-gray-200 dark:border-slate-600';
+                                            bgColor = 'bg-gray-50 dark:bg-slate-700/30 grayscale hover:grayscale-0';
+                                            indicatorColor = 'bg-gray-400';
+                                            statusText = 'Terminada';
+                                        } else if (act.status === 'present') {
+                                            borderColor = 'border-green-200 dark:border-green-800/50';
+                                            bgColor = 'bg-green-50/50 dark:bg-green-900/10 hover:bg-green-50 dark:hover:bg-green-900/20';
+                                            indicatorColor = 'bg-[#25D366] animate-pulse';
+                                            statusText = 'En Curso';
+                                        }
 
-                                            <div className="flex justify-between items-start mb-2 pl-2">
-                                                <div
-                                                    className="font-bold text-gray-800 dark:text-gray-200 text-sm leading-tight cursor-pointer hover:text-[#003366] dark:hover:text-blue-400 transition-colors"
-                                                    onClick={() => onSelectDocente(act.idDocente)}
-                                                    title="Ver perfil completo"
-                                                >
-                                                    {act.nombreDocente}
+                                        return (
+                                            <div
+                                                key={i}
+                                                className={`p-4 border rounded-xl transition-all relative overflow-hidden group ${bgColor} ${borderColor}`}
+                                            >
+                                                {/* Indicador de estado lateral */}
+                                                <div className={`absolute left-0 top-0 bottom-0 w-1 ${indicatorColor}`} />
+
+                                                <div className="flex justify-between items-start mb-2 pl-2">
+                                                    <div
+                                                        className="font-bold text-gray-800 dark:text-gray-200 text-sm leading-tight cursor-pointer hover:text-[#003366] dark:hover:text-blue-400 transition-colors"
+                                                        onClick={() => onSelectDocente(act.idDocente)}
+                                                        title="Ver perfil completo"
+                                                    >
+                                                        {act.nombreDocente}
+                                                    </div>
+                                                    <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase ml-2 flex-shrink-0 ${act.status === 'past' ? 'bg-gray-200 text-gray-600' :
+                                                        act.status === 'present' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'
+                                                        }`}>
+                                                        {statusText}
+                                                    </span>
                                                 </div>
-                                                <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase ml-2 flex-shrink-0 ${act.status === 'past' ? 'bg-gray-200 text-gray-600' :
-                                                    act.status === 'present' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'
-                                                    }`}>
-                                                    {statusText}
-                                                </span>
-                                            </div>
 
-                                            <div className="text-xs text-gray-600 dark:text-gray-400 font-bold mb-3 pl-2 opacity-80">Semana {act.numSemana} • {act.cursoMateria}</div>
+                                                <div className="text-xs text-gray-600 dark:text-gray-400 font-bold mb-3 pl-2 opacity-80">Semana {act.numSemana} • {act.cursoMateria}</div>
 
-                                            <div className="flex justify-between items-center pl-2">
-                                                <span className="text-xs text-gray-500 font-bold flex items-center gap-1">⏰ {act.hora}</span>
-                                                <a href={act.zoomLink} target="_blank" rel="noreferrer"
-                                                    onClick={(e) => { e.stopPropagation(); registrarLog('admin', `Unido a clase de ${act.nombreDocente} (Sem ${act.numSemana})`); }}
-                                                    className={`inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-white transition-colors cursor-pointer no-underline ${act.status === 'past' ? 'bg-gray-400 hover:bg-gray-500' :
-                                                        act.status === 'present' ? 'bg-[#25D366] hover:bg-green-600 shadow-[0_2px_10px_rgba(37,211,102,0.2)]' :
-                                                            'bg-[#2D8CFF] hover:bg-blue-600'
-                                                        }`}
-                                                >
-                                                    🎥 Entrar
-                                                </a>
+                                                <div className="flex justify-between items-center pl-2">
+                                                    <span className="text-xs text-gray-500 font-bold flex items-center gap-1">⏰ {act.hora}</span>
+                                                    <a href={act.zoomLink} target="_blank" rel="noreferrer"
+                                                        onClick={(e) => { e.stopPropagation(); registrarLog('admin', `Unido a clase de ${act.nombreDocente} (Sem ${act.numSemana})`); }}
+                                                        className={`inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-white transition-colors cursor-pointer no-underline ${act.status === 'past' ? 'bg-gray-400 hover:bg-gray-500' :
+                                                            act.status === 'present' ? 'bg-[#25D366] hover:bg-green-600 shadow-[0_2px_10px_rgba(37,211,102,0.2)]' :
+                                                                'bg-[#2D8CFF] hover:bg-blue-600'
+                                                            }`}
+                                                    >
+                                                        🎥 Entrar
+                                                    </a>
+                                                </div>
                                             </div>
-                                        </div>
-                                    )
-                                })
-                            )}
+                                        )
+                                    })
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Directorio de Docentes Real */}
+                        <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-gray-100 dark:border-slate-700 transition-colors overflow-hidden flex flex-col h-[600px]">
+                            <div className="flex justify-between items-center flex-wrap gap-4 mb-6">
+                                <h4 className="m-0 text-[#003366] dark:text-blue-400 font-bold text-xl">👥 Directorio Sincronizado ({docentesList.length})</h4>
+                                <form onSubmit={(e) => e.preventDefault()}>
+                                    <input
+                                        type="text"
+                                        placeholder="Buscar estudiante o código..."
+                                        value={filterDocente}
+                                        onChange={(e) => setFilterDocente(e.target.value)}
+                                        className="p-3 w-full md:w-64 rounded-xl border border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#003366] transition-all font-medium text-sm"
+                                    />
+                                </form>
+                            </div>
+
+                            <div className="flex-1 overflow-y-auto custom-scrollbar">
+                                <table className="w-full text-left border-collapse relative">
+                                    <thead className="sticky top-0 bg-white dark:bg-slate-800 z-10">
+                                        <tr className="border-b-2 border-gray-100 dark:border-slate-700">
+                                            <th className="p-3 text-sm text-gray-500 dark:text-gray-400 uppercase font-bold">Nombre del Estudiante</th>
+                                            <th className="p-3 text-sm text-gray-500 dark:text-gray-400 uppercase font-bold">Código</th>
+                                            <th className="p-3 text-sm text-gray-500 dark:text-gray-400 uppercase font-bold">Cursos Asignados</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {loadingDocentes ? (
+                                            <tr>
+                                                <td colSpan="3" className="p-10 text-center text-gray-500">
+                                                    <svg className="animate-spin h-6 w-6 mx-auto mb-2 text-[#003366] dark:text-blue-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                    </svg>
+                                                    Cargando estudiantes de Firebase...
+                                                </td>
+                                            </tr>
+                                        ) : docentesList.length === 0 ? (
+                                            <tr>
+                                                <td colSpan="3" className="p-6 text-center text-gray-500 dark:text-gray-400">No hay estudiantes sincronizados actualmente. Sube el Excel.</td>
+                                            </tr>
+                                        ) : (
+                                            docentesList
+                                                .filter(d =>
+                                                    d.nombre.toLowerCase().includes(filterDocente.toLowerCase()) ||
+                                                    d.id.includes(filterDocente)
+                                                )
+                                                .slice(0, 15) // Limit to top 15 matches for quick UI
+                                                .map(d => (
+                                                    <tr
+                                                        key={d.id}
+                                                        onClick={() => onSelectDocente(d.id)}
+                                                        className="border-b border-gray-50 dark:border-slate-700/50 hover:bg-gray-100 dark:hover:bg-slate-700/60 transition-colors cursor-pointer group"
+                                                    >
+                                                        <td className="p-3 font-semibold text-gray-800 dark:text-gray-200 group-hover:text-[#003366] dark:group-hover:text-blue-400 transition-colors">{d.nombre}</td>
+                                                        <td className="p-3 text-gray-600 dark:text-gray-400 font-mono text-sm">{d.id}</td>
+                                                        <td className="p-3 text-gray-600 dark:text-gray-400"><span className="bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300 font-bold px-2 py-1 rounded text-xs">{d.cursosCount}</span></td>
+                                                    </tr>
+                                                ))
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+
                         </div>
                     </div>
+                )}
 
-                    {/* Directorio de Docentes Real */}
-                    <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-gray-100 dark:border-slate-700 transition-colors overflow-hidden flex flex-col h-[600px]">
-                        <div className="flex justify-between items-center flex-wrap gap-4 mb-6">
-                            <h4 className="m-0 text-[#003366] dark:text-blue-400 font-bold text-xl">👥 Directorio Sincronizado ({docentesList.length})</h4>
-                            <form onSubmit={(e) => e.preventDefault()}>
-                                <input
-                                    type="text"
-                                    placeholder="Buscar estudiante o código..."
-                                    value={filterDocente}
-                                    onChange={(e) => setFilterDocente(e.target.value)}
-                                    className="p-3 w-full md:w-64 rounded-xl border border-gray-300 dark:border-slate-600 dark:bg-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#003366] transition-all font-medium text-sm"
-                                />
-                            </form>
+                {activeTab === 'logs' && (
+                    <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-gray-100 dark:border-slate-700 transition-colors fade-in-up">
+                        <div className="flex justify-between items-center mb-6">
+                            <h4 className="m-0 text-[#003366] dark:text-blue-400 font-bold text-xl flex items-center gap-2">📝 Registro de Búsquedas (100 recientes)</h4>
                         </div>
-
-                        <div className="flex-1 overflow-y-auto custom-scrollbar">
-                            <table className="w-full text-left border-collapse relative">
-                                <thead className="sticky top-0 bg-white dark:bg-slate-800 z-10">
-                                    <tr className="border-b-2 border-gray-100 dark:border-slate-700">
-                                        <th className="p-3 text-sm text-gray-500 dark:text-gray-400 uppercase font-bold">Nombre del Estudiante</th>
-                                        <th className="p-3 text-sm text-gray-500 dark:text-gray-400 uppercase font-bold">Código</th>
-                                        <th className="p-3 text-sm text-gray-500 dark:text-gray-400 uppercase font-bold">Cursos Asignados</th>
+                        <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-slate-700">
+                            <table className="w-full text-left border-collapse min-w-[700px]">
+                                <thead className="bg-gray-50 dark:bg-slate-900">
+                                    <tr className="border-b border-gray-200 dark:border-slate-700">
+                                        <th className="p-4 text-xs tracking-wider text-gray-500 dark:text-gray-400 uppercase font-bold">Fecha / Hora</th>
+                                        <th className="p-4 text-xs tracking-wider text-gray-500 dark:text-gray-400 uppercase font-bold">Documento / Código</th>
+                                        <th className="p-4 text-xs tracking-wider text-gray-500 dark:text-gray-400 uppercase font-bold">Estado / Resultado</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {loadingDocentes ? (
-                                        <tr>
-                                            <td colSpan="3" className="p-10 text-center text-gray-500">
-                                                <svg className="animate-spin h-6 w-6 mx-auto mb-2 text-[#003366] dark:text-blue-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                                </svg>
-                                                Cargando estudiantes de Firebase...
-                                            </td>
-                                        </tr>
-                                    ) : docentesList.length === 0 ? (
-                                        <tr>
-                                            <td colSpan="3" className="p-6 text-center text-gray-500 dark:text-gray-400">No hay estudiantes sincronizados actualmente. Sube el Excel.</td>
-                                        </tr>
+                                    {logs.length === 0 ? (
+                                        <tr><td colSpan="3" className="p-6 text-center text-gray-500 dark:text-gray-400">No hay logs registrados en la base de datos.</td></tr>
                                     ) : (
-                                        docentesList
-                                            .filter(d =>
-                                                d.nombre.toLowerCase().includes(filterDocente.toLowerCase()) ||
-                                                d.id.includes(filterDocente)
-                                            )
-                                            .slice(0, 15) // Limit to top 15 matches for quick UI
-                                            .map(d => (
-                                                <tr
-                                                    key={d.id}
-                                                    onClick={() => onSelectDocente(d.id)}
-                                                    className="border-b border-gray-50 dark:border-slate-700/50 hover:bg-gray-100 dark:hover:bg-slate-700/60 transition-colors cursor-pointer group"
-                                                >
-                                                    <td className="p-3 font-semibold text-gray-800 dark:text-gray-200 group-hover:text-[#003366] dark:group-hover:text-blue-400 transition-colors">{d.nombre}</td>
-                                                    <td className="p-3 text-gray-600 dark:text-gray-400 font-mono text-sm">{d.id}</td>
-                                                    <td className="p-3 text-gray-600 dark:text-gray-400"><span className="bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300 font-bold px-2 py-1 rounded text-xs">{d.cursosCount}</span></td>
-                                                </tr>
-                                            ))
+                                        logs.map(log => (
+                                            <tr key={log.id} className="border-b border-gray-100 dark:border-slate-700/50 hover:bg-gray-50 dark:hover:bg-slate-700/30 transition-colors">
+                                                <td className="p-4 text-sm text-gray-700 dark:text-gray-300">{log.fecha || 'Sin fecha'}</td>
+                                                <td className="p-4 text-sm font-mono text-[#003366] dark:text-blue-400 font-bold">{log.doc || 'N/A'}</td>
+                                                <td className="p-4 text-sm">
+                                                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold ${log.estado?.includes('❌') ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'}`}>
+                                                        {log.estado || 'Desconocido'}
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        ))
                                     )}
                                 </tbody>
                             </table>
                         </div>
-
                     </div>
-                </div>
+                )}
+
+                {activeTab === 'errores' && (
+                    <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-gray-100 dark:border-slate-700 transition-colors fade-in-up">
+                        <div className="flex justify-between items-center mb-6">
+                            <h4 className="m-0 text-[#003366] dark:text-blue-400 font-bold text-xl flex items-center gap-2">🎧 Tickets de Soporte Estudiantil</h4>
+                        </div>
+                        <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-slate-700">
+                            <table className="w-full text-left border-collapse min-w-[700px]">
+                                <thead className="bg-gray-50 dark:bg-slate-900">
+                                    <tr className="border-b border-gray-200 dark:border-slate-700">
+                                        <th className="p-4 text-xs tracking-wider text-gray-500 dark:text-gray-400 uppercase font-bold w-1/4">Fecha del Reporte</th>
+                                        <th className="p-4 text-xs tracking-wider text-gray-500 dark:text-gray-400 uppercase font-bold w-1/4">Estudiante</th>
+                                        <th className="p-4 text-xs tracking-wider text-gray-500 dark:text-gray-400 uppercase font-bold w-1/2">Mensaje del Problema</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {errores.length === 0 ? (
+                                        <tr><td colSpan="3" className="p-6 text-center text-gray-500 dark:text-gray-400">No hay tickets de soporte reportados.</td></tr>
+                                    ) : (
+                                        errores.map(err => (
+                                            <tr key={err.id} className="border-b border-gray-100 dark:border-slate-700/50 hover:bg-gray-50 dark:hover:bg-slate-700/30 transition-colors">
+                                                <td className="p-4 text-sm text-gray-700 dark:text-gray-300">{err.fecha || 'Sin fecha'}</td>
+                                                <td className="p-4">
+                                                    <div className="text-sm font-bold text-gray-900 dark:text-gray-100">{err.nombre || 'Anónimo'}</div>
+                                                    <div className="text-xs font-mono text-[#003366] dark:text-blue-400 mt-1">{err.codigo || 'Sin código'}</div>
+                                                </td>
+                                                <td className="p-4 text-sm text-gray-600 dark:text-gray-400 whitespace-pre-wrap leading-relaxed">
+                                                    {err.mensaje || 'Sin mensaje detallado...'}
+                                                </td>
+                                            </tr>
+                                        ))
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );
