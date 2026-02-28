@@ -7,7 +7,7 @@ export const registrarLog = (documento, accion) => {
     const datosLog = {
       fecha: new Date().toLocaleString('es-CO'),
       doc: documento,
-      estado: `[APP] ${accion}`
+      estado: `[ESTUDIANTE] ${accion}`
     };
     fetch(URL_SCRIPT_LOGS, {
       method: "POST",
